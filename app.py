@@ -123,7 +123,7 @@ def index():
 def home():
     return render_template_string(HOME_HTML)
 
----
+
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def proxy_request(path):
     query_string = request.query_string.decode('utf-8')
