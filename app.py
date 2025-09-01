@@ -1,14 +1,14 @@
 import subprocess
 import json
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
 app = Flask(__name__)
 
 # jsonではバックスラッシュを使用する記号などはバックスラッシュをそのままにしたい
-print(json.dumps({"message": "PythonでYouTube動画を埋め込むようにしました。", "user": "カカオマメ"}))
+print(json.dumps({"message": "プロキシ機能とホームページを統合しました。", "user": "カカオマメ"}))
 
 # YouTubeの特定のパスをリスト化
 YOUTUBE_PATHS = ["watch", "channel", "c", "@", "search", "live", "playlist", "tag", "shorts"]
@@ -33,8 +33,8 @@ def load_video_config():
 # アプリケーション起動時に設定を読み込む
 load_video_config()
 
-# ルートパスで返すHTMLコンテンツ
-ROOT_HTML_CONTENT = """
+# --- ホームページ関連のHTML ---
+INDEX_HTML = """
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -42,9 +42,9 @@ ROOT_HTML_CONTENT = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ホームページ - pokemoguプロジェクト</title>
     <link rel="apple-touch-icon" sizes="180x180" href="https://kakaomames.github.io/Minecraft-flask-app/static/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-16x16.png">
-<link rel="manifest" href="https://kakaomames.github.io/Minecraft-flask-app/static/site.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-16x16.png">
+    <link rel="manifest" href="https://kakaomames.github.io/Minecraft-flask-app/static/site.webmanifest">
     <link rel="stylesheet" href="https://kakaomames.github.io/Minecraft-flask-app/static/style.css">
 </head>
 <body>
@@ -65,10 +65,63 @@ ROOT_HTML_CONTENT = """
 </html>
 """
 
-@app.route('/', methods=['GET'])
-def serve_root_html():
-    """ルートパスにアクセスした際に静的なHTMLを返す"""
-    return ROOT_HTML_CONTENT, 200, {'Content-Type': 'text/html; charset=utf-8'}
+HOME_HTML = """
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ホーム - pokemoguプロジェクト</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://kakaomames.github.io/Minecraft-flask-app/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-16x16.png">
+    <link rel="manifest" href="https://kakaomames.github.io/Minecraft-flask-app/static/site.webmanifest">
+    <link rel="stylesheet" href="https://kakaomames.github.io/Minecraft-flask-app/static/style.css">
+    <style>
+        .textbox-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50vh;
+        }
+        .textbox {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HOME🏠</h1>
+        <nav>
+            <ul>
+                <li><a href="/">トップページ</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="textbox-container">
+            <input type="text" class="textbox" placeholder="ここに何か入力してください...">
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025  pokemoguプロジェクト</p>
+    </footer>
+</body>
+</html>
+"""
+
+# --- ルートの定義 ---
+@app.route('/')
+def index():
+    return render_template_string(INDEX_HTML)
+
+@app.route('/home')
+def home():
+    return render_template_string(HOME_HTML)
 
 ---
 @app.route('/<path:path>', methods=['GET', 'POST'])
@@ -116,22 +169,15 @@ def proxy_request(path):
         if 'text/html' in content_type:
             soup = BeautifulSoup(content, 'html.parser')
 
-            # 動画URLをiframeに変換
             for video_tag in soup.find_all('video'):
                 source_tag = video_tag.find('source')
                 if source_tag and source_tag.get('src'):
                     video_url = source_tag['src']
-                    
                     video_id = urlparse(video_url).path.split('/')[-1]
-                    
-                    # 動画設定のparamsを追加
                     final_params_string = VIDEO_CONFIG["params"] if VIDEO_CONFIG else ""
-                    
                     iframe_html = f'<iframe width="560" height="315" src="{EMBED_BASE_URL}{video_id}{final_params_string}" frameborder="0" allowfullscreen></iframe>'
-                    
                     video_tag.replace_with(BeautifulSoup(iframe_html, 'html.parser'))
 
-            # 他のリンク（a, style, script, link, img, source）を書き換え
             tags_to_rewrite = {'a': 'href', 'link': 'href', 'script': 'src', 'img': 'src', 'source': 'src'}
             for tag, attr in tags_to_rewrite.items():
                 for element in soup.find_all(tag):
@@ -140,7 +186,6 @@ def proxy_request(path):
                         absolute_link = urljoin(target_url, link)
                         element[attr] = f"./?url={absolute_link}"
             
-            # CSSの<style>タグ内のURLも書き換え
             for style_tag in soup.find_all('style'):
                 if style_tag.string:
                     style_tag.string = style_tag.string.replace('url(', f'url(./?url=')
