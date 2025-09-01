@@ -1,14 +1,14 @@
 import subprocess
 import json
 import os
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, redirect
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, quote
 
 app = Flask(__name__)
 
 # jsonではバックスラッシュを使用する記号などはバックスラッシュをそのままにしたい
-print(json.dumps({"message": "プロキシ機能とホームページを統合しました。", "user": "カカオマメ"}))
+print(json.dumps({"message": "検索もプロキシ経由で行うようにしました。", "user": "カカオマメ"}))
 
 # YouTubeの特定のパスをリスト化
 YOUTUBE_PATHS = ["watch", "channel", "c", "@", "search", "live", "playlist", "tag", "shorts"]
@@ -22,7 +22,6 @@ VIDEO_CONFIG = None
 def load_video_config():
     global VIDEO_CONFIG
     try:
-        # curlコマンドでjsonファイルを取得
         result = subprocess.run(["curl", "-s", CONFIG_URL], capture_output=True, text=True, check=True)
         VIDEO_CONFIG = json.loads(result.stdout)
         print("動画設定ファイルを読み込みました。")
@@ -30,7 +29,6 @@ def load_video_config():
         print(f"動画設定ファイルの読み込みに失敗しました: {e}")
         VIDEO_CONFIG = {"params": ""}
 
-# アプリケーション起動時に設定を読み込む
 load_video_config()
 
 # --- ホームページ関連のHTML ---
@@ -84,7 +82,7 @@ HOME_HTML = """
             align-items: center;
             height: 50vh;
         }
-        .textbox {
+        .search-box {
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
@@ -104,7 +102,10 @@ HOME_HTML = """
     </header>
     <main>
         <div class="textbox-container">
-            <input type="text" class="textbox" placeholder="ここに何か入力してください...">
+            <form action="/search" method="get">
+                <input type="text" name="q" class="search-box" placeholder="URLまたは検索テキストを入力...">
+                <button type="submit" style="display:none;">検索</button>
+            </form>
         </div>
     </main>
     <footer>
@@ -113,6 +114,13 @@ HOME_HTML = """
 </body>
 </html>
 """
+
+def is_url(text):
+    """
+    入力された文字列がURLとして有効かどうかを判定
+    """
+    text = text.lower()
+    return text.startswith(("http://", "https://", "www.", "m."))
 
 # --- ルートの定義 ---
 @app.route('/')
@@ -123,6 +131,22 @@ def index():
 def home():
     return render_template_string(HOME_HTML)
 
+@app.route('/search', methods=['GET'])
+def handle_search():
+    """
+    検索テキストまたはURLを処理
+    """
+    query = request.args.get('q')
+    if not query:
+        return redirect('/home')
+    
+    if is_url(query):
+        # URLと判断した場合、プロキシルートにリダイレクト
+        return redirect(f'/?url={query}')
+    else:
+        # 検索テキストと判断した場合、Google検索のURLをプロキシに渡す
+        google_search_url = f"https://www.google.com/search?q={quote(query)}"
+        return redirect(f"/?url={google_search_url}")
 
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def proxy_request(path):
