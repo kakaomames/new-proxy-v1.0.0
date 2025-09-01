@@ -40,50 +40,27 @@ ROOT_HTML_CONTENT = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロキシサイトへようこそ</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            text-align: center;
-            padding-top: 50px;
-        }
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-width: 600px;
-            margin: auto;
-        }
-        h1 {
-            color: #0056b3;
-        }
-        p {
-            line-height: 1.6;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <title>ホームページ - pokemoguプロジェクト</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://kakaomames.github.io/Minecraft-flask-app/static/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://kakaomames.github.io/Minecraft-flask-app/static/favicon-16x16.png">
+<link rel="manifest" href="https://kakaomames.github.io/Minecraft-flask-app/static/site.webmanifest">
+    <link rel="stylesheet" href="https://kakaomames.github.io/Minecraft-flask-app/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>プロキシサイト</h1>
-        <p>このサイトはプロキシとして機能します。</p>
-        <p>
-            URLの末尾にYouTubeのパス（例：/watch?v=...）や、
-            他のサイトのURL（例：/https://www.example.com）を入力してアクセスしてください。
-        </p>
-        <p>
-            <a href="/watch?v=dQw4w9WgXcQ">YouTubeのサンプルページへ</a>
-        </p>
-    </div>
+    <header>
+        <h1>HOME🏠</h1>
+        <nav>
+            <ul>
+                <li><a href="/home">ホーム</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+    </main>
+    <footer>
+        <p>&copy; 2025  pokemoguプロジェクト</p>
+    </footer>
 </body>
 </html>
 """
