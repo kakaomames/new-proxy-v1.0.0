@@ -8,7 +8,7 @@ from urllib.parse import urljoin, urlparse, quote
 app = Flask(__name__)
 
 # jsonではバックスラッシュを使用する記号などはバックスラッシュをそのままにしたい
-print(json.dumps({"message": "デバッグログを追加して、どこまで実行されるか確認します。", "user": "カカオマメ"}))
+print(json.dumps({"message": "プロキシのルートを統合しました。", "user": "カカオマメ"}))
 
 # プロキシのベースURL (例: https://[あなたのドメイン].vercel.app)
 def get_proxy_base_url():
@@ -23,7 +23,6 @@ YOUTUBE_PATHS = ["watch", "channel", "c", "@", "search", "live", "playlist", "ta
 CONFIG_URL = 'https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json'
 EMBED_BASE_URL = 'https://www.youtubeeducation.com/embed/'
 VIDEO_CONFIG = None
-print(f"GITHUBのリンク:{CONFIG_URL},YOUTUBEの埋め込みリンク{EMBED_BASE_URL},Noneか？={VIDEO_CONFIG}")
 
 # video_config.jsonの内容を読み込む関数
 def load_video_config():
@@ -127,11 +126,6 @@ def is_url(text):
     return text.startswith(("http://", "https://", "www.", "m."))
 
 # --- ルートの定義 ---
-@app.route('/')
-def index():
-    print("➡️ ルートページへのリクエストを受信しました。")
-    return render_template_string(INDEX_HTML)
-
 @app.route('/home')
 def home():
     print("➡️ ホームページへのリクエストを受信しました。")
@@ -154,9 +148,16 @@ def handle_search():
         print(f"➡️ Google検索URLを構築しました: {google_search_url}")
         return redirect(f"/?url={quote(google_search_url, safe='')}")
 
+@app.route('/', methods=['GET', 'POST'])
 @app.route('/<path:path>', methods=['GET', 'POST'])
-def proxy_request(path):
+def proxy_request(path=""):
     print(f"➡️ プロキシリクエストを受信しました。パス: {path}")
+    
+    # パスが空の場合、ホームページを表示
+    if not path:
+        return render_template_string(INDEX_HTML)
+
+    # 既存のプロキシロジック
     query_string = request.query_string.decode('utf-8')
     target_url = None
 
@@ -172,7 +173,6 @@ def proxy_request(path):
             if query_string:
                 target_url += f"?{query_string}"
             print(f"🎯 YouTubeパスからターゲットURLを構築: {target_url}")
-            print(f"{youtube_base_url}/{path}")
         else:
             if path.startswith(("http://", "https://", "www.", "m.")):
                 if not path.startswith(("http://", "https://")):
